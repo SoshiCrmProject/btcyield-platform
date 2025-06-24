@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: btcyield-postgres
+    environment:
+      POSTGRES_USER: btcyield
+      POSTGRES_PASSWORD: btcyield123
+      POSTGRES_DB: btcyield
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U btcyield']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: btcyield-redis
+    command: redis-server --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  questdb:
+    image: questdb/questdb:7.4.2
+    container_name: btcyield-questdb
+    ports:
+      - '9000:9000' # REST API & Web Console
+      - '8812:8812' # PostgreSQL wire protocol
+      - '9009:9009' # InfluxDB line protocol
+    volumes:
+      - questdb_data:/var/lib/questdb
+    environment:
+      QDB_TELEMETRY_ENABLED: false
+
+volumes:
+  postgres_data:
+  redis_data:
+  questdb_data:
+
+networks:
+  default:
+    name: btcyield-network
